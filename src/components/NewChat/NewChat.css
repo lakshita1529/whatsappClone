@@ -1,67 +1,82 @@
-.newChat{
-  width: 27%;
-  max-width: 335px;
+/* NewChat.css */
+.newChat {
   position: fixed;
-  left: 80px;
-  top: 60px;
-  border-radius: 20px;
-  bottom: 0;
-  background-color:#FFF;
-  display:flex;
-  flex-direction: column;
-  transition: all ease .3s;
-  z-index: 2;
-}
-.topo-transparent{
-  background-color:transparent !important;
-}
-.newChat--list{
-  flex: 1;
-  overflow-y: auto;
+  width: 30%;
+  height: 100%;
+  right: 0;
+  top: 0;
+  background-color: white;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+  z-index: 1000; /* Ensure it's above other elements */
+  overflow-y: auto; /* Allow scrolling if content overflows */
+  transition: top 0.3s ease-in-out; /* Smooth transition */
 }
 
-.newChat--list::-webkit-scrollbar{
-  width: 6px;
-  height: 6px;
+.sidebar--topo {
+  height: 60px;
 }
-.newChat--list::-webkit-scrollbar-thumb{
-  background-color: rgba(0, 0, 0, .2);
+
+.newChat--list {
+  padding: 10px;
 }
-.newChat--item{
+
+.newChat--item {
   display: flex;
   align-items: center;
   padding: 10px;
+  border-bottom: 1px solid #ccc; /* Add a line between items */
   cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
 }
-.newChat--item:hover{background-color: #F5F5F5}
-.newChat--itemAvatar{
+
+.newChat--item:hover {
+  background-color: #f5f5f5;
+}
+
+.newChat--itemAvatar {
   width: 50px;
   height: 50px;
   border-radius: 50%;
   margin-right: 15px;
+  background-color: black;
 }
-.newChat--itemName{
-  font-size: 17px;
-  color: #000;
+
+.newChat--itemName {
+  font-size: 16px;
+  font-weight: bold;
 }
-.newChat--closebutton{
-  display:flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  padding: 5px;
+
+.newChat--closebutton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1100;
 }
-.newChat--closebutton:hover{background-color: #F5F5F5;}
-.sidebar--chatlist-top{
-  height: 100px;
-  width: 100%;
+
+/* NewChat.css */
+.newChat--attachment {
+  position: absolute;
+  bottom: 20px; /* Adjust this value to move the icon down */
+  left: 20px; /* Adjust this value for horizontal positioning */
+  cursor: pointer;
+  z-index: 1100;
+  font-size: 30px; /* Adjust size if needed */
+  color: #1DAB67; /* Color of the icon */
+}
+
+
+
+.sidebar--content {
+  padding: 20px 0;
+}
+
+.sidebar--chatlist-top {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   padding: 0 20px;
 }
-.sidebar--chatlist-top h1{
-  font-size: 20px;
+
+.topo-transparent {
+  background-color: rgba(255, 255, 255, 0.8);
 }

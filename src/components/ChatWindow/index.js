@@ -1,139 +1,105 @@
-// ChatWindow.js
-
-import React, { useState, useEffect, useRef } from 'react';
-import Api from '../../db/Api';
-import EmojiPicker from 'emoji-picker-react';
+import React, { useState, useEffect } from 'react';
 import './ChatWindow.css';
-
-import LocalPhoneIcon from '@material-ui/icons/LocalPhone';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
-import InsertEmoticonIcon from '@material-ui/icons/InsertEmoticon';
-import CloseIcon from '@material-ui/icons/Close';
+import Api from '../../db/Api';
+import AttachFileIcon from '@material-ui/icons/AttachFile';
 import SendIcon from '@material-ui/icons/Send';
-import MicIcon from '@material-ui/icons/Mic';
-import AttachFileIcon from '@material-ui/icons/AttachFile'; 
-
-import MessageItem from '../MessageItem';
+import EditIcon from '@material-ui/icons/Edit';
 
 export default function ChatWindow({ user, data }) {
-  const body = useRef();
-
-  let recognition = null;
-  let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (SpeechRecognition !== undefined) recognition = new SpeechRecognition();
-
-  const [emojiOpen, setEmojiOpen] = useState(false);
-  const [text, setText] = useState('');
-  const [listening, setListening] = useState(false);
-  const [list, setList] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [editingMessage, setEditingMessage] = useState(null);
   const [attachment, setAttachment] = useState(null);
 
   useEffect(() => {
-    if (body.current.scrollHeight > body.current.offsetHeight) {
-      body.current.scrollTop = body.current.scrollHeight - body.current.offsetHeight;
-    }
-  }, [list]);
-
-  useEffect(() => {
-    setList([]);
-    let unsub = Api.onChatContent(data.chatId, setList, setUsers);
-    return unsub;
+    // Fetch messages for the chat
+    const fetchMessages = async () => {
+      const chatMessages = await Api.getChatMessages(data.chatId);
+      setMessages(chatMessages);
+    };
+    fetchMessages();
   }, [data.chatId]);
 
-  const handleEmojiPicker = (e, emojiObject) => setText(text + emojiObject.emoji);
-  const handleOpenEmojiPicker = () => setEmojiOpen(!emojiOpen);
-  const handleMicClick = () => {
-    if (recognition === null) return;
-    recognition.lang = 'pt-br';
-    recognition.onstart = () => setListening(true);
-    recognition.onend = () => setListening(false);
-    recognition.onresult = e => setText(e.results[0][0].transcript);
-    recognition.start();
-  };
-
-  const handleInputKey = e => { if (e.keyCode === 13) handleSendClick(); };
-
-  const handleSendClick = async () => {
-    if (text !== '' || attachment) {
-      let fileUrl = '';
-      if (attachment) {
-        fileUrl = await Api.uploadAttachment(attachment);
+  const handleSendMessage = async () => {
+    if (message.trim() || attachment) {
+      let newMessage;
+      if (editingMessage) {
+        newMessage = { ...editingMessage, message, type: attachment ? 'image' : 'text', attachment };
+        await Api.editMessage(newMessage, data.chatId); // Edit the message in the API
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) => (msg.id === newMessage.id ? newMessage : msg))
+        );
+      } else {
+        newMessage = {
+          id: new Date().getTime(), // Unique ID for the new message
+          sender: user.id,
+          message,
+          type: attachment ? 'image' : 'text',
+          attachment,
+          timestamp: new Date().toISOString(),
+        };
+        await Api.sendMessage(newMessage, data.chatId); // Send the message to the API
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
       }
-      Api.sendMessage(data, user.id, attachment ? 'attachment' : 'text', attachment ? fileUrl : text, users);
-      setText('');
+      setMessage('');
       setAttachment(null);
-      setEmojiOpen(false);
+      setEditingMessage(null);
     }
   };
 
-  const handleAttachmentChange = (e) => {
-    setAttachment(e.target.files[0]);
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const attachmentUrl = await Api.uploadAttachment(file); // Upload the file to your storage and get the URL
+      setAttachment(attachmentUrl);
+    }
+  };
+
+  const handleEditMessage = (msg) => {
+    setMessage(msg.message);
+    setAttachment(msg.attachment);
+    setEditingMessage(msg);
   };
 
   return (
-    <div className="ChatWindow">
-      <div className="ChatWindow--header">
-        <div className="ChatWindow--headerinfo">
-          <img className="chatWindow--avatar" src={data.image} alt="" />
-          <div className="ChatWindow--name">{data.title}</div>
-        </div>
-
-        <div className="ChatWindow--headerbuttons">
-          <div className="ChatWindow--btn"><LocalPhoneIcon style={{ color: '#fff' }} /></div>
-          <div className="ChatWindow--btn"><MoreVertIcon style={{ color: '#fff' }} /></div>
-        </div>
+    <div className="chatWindow">
+      <div className="chatWindow--header">
+        <img className="chatWindow--avatar" src="https://t4.ftcdn.net/jpg/05/11/55/91/360_F_511559113_UTxNAE1EP40z1qZ8hIzGNrB0LwqwjruK.jpg" alt="Avatar" />
+        <div className="chatWindowItem--name">Rohit</div>
+        <div className="chatWindow--title">{data.title}</div>
       </div>
-      <div ref={body} className="ChatWindow--body">
-        {list.map((item, key) => (
-          <MessageItem key={key} data={item} user={user} />
+      <div className="chatWindow--messages">
+        {messages.map((msg, index) => (
+          <div key={msg.id || index} className={`message ${msg.sender === user.id ? 'outgoing' : 'incoming'}`}>
+            {msg.attachment && (
+              <div className="message--attachment">
+                <img src={msg.attachment} alt="Attachment" />
+              </div>
+            )}
+            <div className="message--text">{msg.message}</div>
+            {msg.sender === user.id && (
+              <EditIcon className="edit-icon" onClick={() => handleEditMessage(msg)} />
+            )}
+          </div>
         ))}
       </div>
-      <div className="ChatWindow--emojiArea" style={{ height: emojiOpen ? '320px' : '0px' }}>
-        <EmojiPicker disableSearchBar onEmojiClick={handleEmojiPicker} disableSkinTonePicker />
-      </div>
-      <div className="ChatWindow--footer">
-        <div className="ChatWindow--pre">
-          <input 
-            type="file" 
-            id="attachment" 
-            onChange={handleAttachmentChange} 
-            style={{ display: 'none' }} 
-          />
-          <label htmlFor="attachment">
-            <div className="ChatWindow--btn">
-              <AttachFileIcon style={{ color: '#919191' }} />
-            </div>
-          </label>
-          <div className="ChatWindow--btn" onClick={handleOpenEmojiPicker} style={{ width: emojiOpen ? '40px' : '0' }}>
-            <CloseIcon style={{ color: '#919191' }} />
-          </div>
-          <div className="ChatWindow--btn" onClick={handleOpenEmojiPicker}>
-            <InsertEmoticonIcon style={{ color: emojiOpen ? '#009688' : '#919191' }} />
-          </div>
-        </div>
-        <div className="ChatWindow--inputArea">
-          <input 
-            className="ChatWindow--input" 
-            placeholder="Type your message" 
-            type="text" 
-            value={text} 
-            onChange={e => setText(e.target.value)} 
-            onKeyUp={handleInputKey} 
-          />
-        </div>
-        <div className="ChatWindow--pos">
-          {text === '' &&
-            <div className={`ChatWindow--btn btn-send ${listening ? 'listening' : ''}`} onClick={handleMicClick}>
-              <MicIcon className={listening ? 'listening' : ''} style={{ color: '#fff' }} />
-            </div>
-          }
-          {(text !== '' || attachment) &&
-            <div className="ChatWindow--btn btn-send" onClick={handleSendClick}>
-              <SendIcon style={{ color: '#fff' }} />
-            </div>
-          }
-        </div>
+      <div className="chatWindow--input">
+        <input
+          type="file"
+          id="attachment"
+          onChange={handleFileChange}
+          style={{ display: 'none' }}
+        />
+        <label htmlFor="attachment" className="chatWindow--attachmentIcon">
+          <AttachFileIcon />
+        </label>
+        <input
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Type a message..."
+        />
+        <SendIcon onClick={handleSendMessage} className="chatWindow--sendButton" />
       </div>
     </div>
   );

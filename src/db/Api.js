@@ -1,163 +1,59 @@
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/auth';
-import 'firebase/compat/firestore';
-import 'firebase/compat/storage'; // Import storage if you plan to use it
-
-import firebaseConfig from './firebaseConfig';
-
-// Initialize Firebase
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-
-const db = firebase.firestore();
-const storage = firebase.storage(); // Initialize storage
-
 const Api = {
-  FacebookPopup: async () => {
-    const provider = new firebase.auth.FacebookAuthProvider();
-    let result = null;
-    try {
-      result = await firebase.auth().signInWithPopup(provider);
-    } catch (e) {
-      console.error('Error in authentication.', e);
-    }
-    return result;
+  onChatList: (userId, setChatList) => {
+    // Mock implementation: Replace with your API call
+    setChatList([
+      { chatId: '1', name: 'User 1', avatar: 'https://via.placeholder.com/150' },
+      { chatId: '2', name: 'User 2', avatar: 'https://via.placeholder.com/150' }
+    ]);
   },
-  GithubPopup: async () => {
-    const provider = new firebase.auth.GithubAuthProvider();
-    let result = null;
-    try {
-      result = await firebase.auth().signInWithPopup(provider);
-    } catch (e) {
-      console.error('Error in authentication.', e);
-    }
-    return result;
-  },
-  GooglePopup: async () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    let result = null;
-    try {
-      result = await firebase.auth().signInWithPopup(provider);
-    } catch (e) {
-      console.error('Error in authentication.', e);
-    }
-    return result;
-  },
-  addUser: async (u) => {
-    await db.collection('users').doc(u.id).set({
-      name: u.name,
-      avatar: u.avatar
-    }, { merge: true });
+  addUser: async (user) => {
+    // Mock implementation: Replace with your API call
+    console.log('User added:', user);
   },
   getContactList: async (userId) => {
-    let list = [];
-    let result = await db.collection('users').get();
-    result.forEach(result => {
-      let data = result.data();
-      if (result.id !== userId) {
-        list.push({
-          id: result.id,
-          name: data.name,
-          avatar: data.avatar
-        });
-      }
-    });
-    return list;
+    // Mock implementation: Replace with your API call
+    return [
+      { id: 'user1', name: 'User One', avatar: 'https://via.placeholder.com/150' },
+      { id: 'user2', name: 'User Two', avatar: 'https://via.placeholder.com/150' }
+    ];
   },
-  addNewChat: async (user, userChat, setActiveChat) => {
-    const chats = await db.collection('chats').get();
-    let chatExist = false;
-    chats.docs.map(doc => {
-      if (doc.data().users.length === 2 && doc.data().users.includes(userChat.id) && doc.data().users.includes(user.id)) {
-        chatExist = true;
-        setActiveChat({ chatId: doc.id, title: userChat.name, image: userChat.avatar, with: userChat.id });
-      }
-    });
-    if (chatExist) return true;
-    let newChat = await db.collection('chats').add({
-      messages: [],
-      users: [user.id, userChat.id]
-    });
-
-    db.collection('users').doc(user.id).update({
-      chats: firebase.firestore.FieldValue.arrayUnion({
-        chatId: newChat.id,
-        title: userChat.name,
-        image: userChat.avatar,
-        with: userChat.id
-      })
-    });
-
-    db.collection('users').doc(userChat.id).update({
-      chats: firebase.firestore.FieldValue.arrayUnion({
-        chatId: newChat.id,
-        title: user.name,
-        image: user.avatar,
-        with: user.id
-      })
-    });
-    setActiveChat({ chatId: newChat.id, title: userChat.name, image: userChat.avatar, with: userChat.id });
-  },
-  onChatList: (userId, setChatList) => {
-    return db.collection('users').doc(userId).onSnapshot(doc => {
-      if (doc.exists) {
-        let data = doc.data();
-        if (data.chats) {
-          let chats = [...data.chats];
-          chats.sort((a, b) => {
-            if (a.lastMessageDate === undefined) {
-              return -1;
-            }
-            if (a.lastMessageDate.seconds < b.lastMessageDate.seconds) {
-              return 1;
-            } else {
-              return -1;
-            }
-          });
-
-          setChatList(chats);
-        }
-      }
-    });
+  addNewChat: async (user, userChat, setActiveChat, selectedFile = null) => {
+    // Mock implementation: Replace with your API call
+    const newChat = { chatId: 'newChatId', name: userChat.name, avatar: userChat.avatar };
+    setActiveChat(newChat);
+    console.log('New chat started with:', userChat.name);
   },
   onChatContent: (chatId, setList, setUsers) => {
-    return db.collection('chats').doc(chatId).onSnapshot(doc => {
-      if (doc.exists) {
-        let data = doc.data();
-        setList(data.messages);
-        setUsers(data.users);
-      }
-    });
+    // Mock implementation: Replace with your API call
+    setList([
+      { sender: 'user1', message: 'Hello!', type: 'text' },
+      { sender: 'user2', message: 'Hi!', type: 'text' }
+    ]);
+    setUsers(['user1', 'user2']);
+    return () => {}; // Mock unsubscribe function
   },
-  sendMessage: async (chatData, userId, type, body, users) => {
-    let now = new Date();
-    await db.collection('chats').doc(chatData.chatId).update({
-      messages: firebase.firestore.FieldValue.arrayUnion({
-        type,
-        author: userId,
-        body,
-        date: now
-      })
-    });
-
-    for (let i in users) {
-      let u = await db.collection('users').doc(users[i]).get();
-      let uData = u.data();
-      if (uData.chats) {
-        let chats = [...uData.chats];
-        for (let e in chats) {
-          if (chats[e].chatId === chatData.chatId) {
-            chats[e].lastMessage = body;
-            chats[e].lastMessageDate = now;
-          }
-        }
-
-        await db.collection('users').doc(users[i]).update({
-          chats
-        });
-      }
-    }
+  getChatMessages: async (chatId) => {
+    // Mock implementation: Replace with your API call to fetch chat messages
+    return [
+      { sender: 'user1', message: 'Hello!', type: 'text', timestamp: new Date().toISOString() },
+      { sender: 'user2', message: 'Hi!', type: 'text', timestamp: new Date().toISOString() }
+    ];
+  },
+  sendMessage: async (messageData, chatId) => {
+    // Mock implementation: Replace with your API call to send a message
+    console.log('Message sent:', { messageData, chatId });
+    // Return the sent message for updating UI
+    return messageData;
+  },
+  uploadAttachment: async (file) => {
+    // Mock implementation: Replace with your file upload API
+    return 'https://via.placeholder.com/300'; // Replace with actual file URL
+  },
+  editMessage: async (newMessage, chatId) => {
+    // Mock implementation: Replace with your API call to edit a message
+    console.log('Message edited:', { newMessage, chatId });
+    // Return the edited message for updating UI
+    return newMessage;
   }
 };
 

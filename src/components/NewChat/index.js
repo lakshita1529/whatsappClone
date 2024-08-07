@@ -41,7 +41,8 @@ export default function NewChat({ setActiveChat, user, show, setShow }) {
           <div className='sidebar--chatlist-top'>
             <h1>Contacts</h1>
             <div onClick={handleClose} className="newChat--closebutton">
-              <CloseIcon style={{ color: '#1DAB67', fontSize: 30, cursor: 'pointer' }} />
+              <CloseIcon style={{ color: 'black', fontSize: 30, cursor: 'pointer', 
+               }} />
             </div>
           </div>
           <input

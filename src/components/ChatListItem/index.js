@@ -1,11 +1,12 @@
-import React, {useState, useEffect} from 'react';
+// src/components/ChatListItem.js
+import React, { useState, useEffect } from 'react';
 import './ChatListItem.css';
 
-export default function ChatListItem({onClick, data, active}){
+export default function ChatListItem({ onClick, data, active, name }) {
   const [time, setTime] = useState('');
-  
+
   useEffect(() => {
-    if (data.lastMessageDate > 0){
+    if (data.lastMessageDate) {
       let d = new Date(data.lastMessageDate.seconds * 1000);
       let hours = d.getHours();
       let minutes = d.getMinutes();
@@ -14,20 +15,20 @@ export default function ChatListItem({onClick, data, active}){
       setTime(`${hours}:${minutes}`);
     }
   }, [data]);
+
   return (
-    <div className={`chatListItem ${active ? 'active' : ''}`} onClick={onClick}>
-      <img className="chatListItem--avatar" src={data.image} alt="avatar-user"/>
-      <div className="chatListItem--lines">
-        <div className="chatListItem--line">
-          <div className="chatListItem--name">{data.title}</div>
-          <div className="chatListItem--date">{time}</div>
-        </div>
-        <div className="chatListItem--line">
+    <div>
+      <div className={`chatListItem ${active ? 'active' : ''}`} onClick={onClick}>
+        <div className="chatListItem--avatar" /> {/* Avatar placeholder */}
+        <div className="chatListItem--details">
+          <div className="chatListItem--name">{name}</div> {/* Display user name */}
           <div className="chatListItem--lastMsg">
             <p>{data.lastMessage}</p>
           </div>
+          <div className="chatListItem--date">{time}</div>
         </div>
       </div>
+      <hr className="divider" /> {/* Divider line */}
     </div>
   );
 }
